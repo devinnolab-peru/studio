@@ -786,3 +786,72 @@ export async function submitLeadForm(leadId: string, formData: any) {
     revalidatePath('/dashboard/leads');
     return { success: true };
 }
+
+// --- DELETE ACTIONS ---
+
+export async function deleteProject(projectId: string) {
+    try {
+        const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
+        
+        // Buscar el proyecto
+        let projectDoc;
+        try {
+            projectDoc = await projectsCollection.findOne({ _id: convertStringToObjectId(projectId) });
+        } catch {
+            projectDoc = await projectsCollection.findOne({ id: projectId });
+        }
+        
+        if (!projectDoc) {
+            return { error: 'Proyecto no encontrado.' };
+        }
+
+        // Eliminar usando ObjectId o id string
+        try {
+            await projectsCollection.deleteOne({ _id: convertStringToObjectId(projectId) });
+        } catch {
+            await projectsCollection.deleteOne({ id: projectId });
+        }
+        
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/projects');
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { error: 'Ocurrió un error al eliminar el proyecto.' };
+    }
+}
+
+export async function deleteLead(leadId: string) {
+    try {
+        const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+        const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
+        
+        // Buscar el lead
+        let leadDoc;
+        try {
+            leadDoc = await leadsCollection.findOne({ _id: convertStringToObjectId(leadId) });
+        } catch {
+            leadDoc = await leadsCollection.findOne({ id: leadId });
+        }
+        
+        if (!leadDoc) {
+            return { error: 'Lead no encontrado.' };
+        }
+
+        // Eliminar el lead
+        try {
+            await leadsCollection.deleteOne({ _id: convertStringToObjectId(leadId) });
+        } catch {
+            await leadsCollection.deleteOne({ id: leadId });
+        }
+
+        // También eliminar los requerimientos asociados si existen
+        await requirementsCollection.deleteMany({ leadId });
+        
+        revalidatePath('/dashboard/leads');
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { error: 'Ocurrió un error al eliminar el lead.' };
+    }
+}

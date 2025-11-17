@@ -8,14 +8,16 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import type { Project } from '@/lib/definitions';
 import { CreateProjectDialog } from '@/components/dashboard/create-project-dialog';
-import { addProject } from '@/lib/actions';
+import { addProject, deleteProject } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function ProjectGrid({ initialProjects }: { initialProjects: Project[] }) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] =
     useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleAddProject = async (newProjectData: Omit<Project, 'id' | 'shareableLinkId' | 'modules' | 'timelineEvents' | 'changeRequests' | 'initialRequirements' | 'projectDocuments'>) => {
     const result = await addProject(newProjectData);
@@ -36,6 +38,26 @@ export default function ProjectGrid({ initialProjects }: { initialProjects: Proj
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const result = await deleteProject(projectId);
+    if (result.success) {
+        // Optimistic update
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        toast({
+            title: 'Proyecto Eliminado',
+            description: `El proyecto "${project?.name}" ha sido eliminado.`,
+        });
+        router.refresh();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: result.error || 'No se pudo eliminar el proyecto.',
+        });
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -50,7 +72,7 @@ export default function ProjectGrid({ initialProjects }: { initialProjects: Proj
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard key={project.id} project={project} onDelete={handleDeleteProject} />
         ))}
       </div>
       <CreateProjectDialog

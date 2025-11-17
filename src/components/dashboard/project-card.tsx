@@ -1,4 +1,4 @@
-
+'use client';
 
 import Link from 'next/link';
 import {
@@ -12,14 +12,26 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import type { Project } from '@/lib/definitions';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
 import StatusBadge from '../shared/status-badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ProjectCardProps {
   project: Project;
+  onDelete?: (projectId: string) => void;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
     const completedModules = project.modules.filter(m => m.status === 'Completado').length;
     const totalModules = project.modules.length;
     const progress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
@@ -29,7 +41,35 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <CardHeader>
         <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-bold">{project.name}</CardTitle>
-            <StatusBadge status={project.status as any} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={project.status as any} />
+              {onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Se eliminará permanentemente el proyecto "{project.name}" y todos sus datos asociados.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(project.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
         </div>
         <CardDescription className="line-clamp-2">{project.description}</CardDescription>
       </CardHeader>

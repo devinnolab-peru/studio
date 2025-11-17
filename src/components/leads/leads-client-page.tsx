@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Lead, ClientRequirements } from '@/lib/definitions';
 import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Mail, Copy, Eye } from 'lucide-react';
+import { PlusCircle, Mail, Copy, Eye, Trash2 } from 'lucide-react';
 import FileText from '@/components/shared/FileText';
 import {
   Table,
@@ -26,14 +26,27 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { createLead } from '@/lib/actions';
+import { createLead, deleteLead } from '@/lib/actions';
 import { CreateLeadDialog } from '@/components/leads/create-lead-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 export default function LeadsClientPage({ initialLeads, initialRequirements }: { initialLeads: Lead[], initialRequirements: ClientRequirements[] }) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [requirements, setRequirements] = useState<ClientRequirements[]>(initialRequirements);
   const [isCreateLeadDialogOpen, setIsCreateLeadDialogOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleCreateLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'formLink' | 'status'>) => {
     const result = await createLead(leadData);
@@ -66,6 +79,27 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
       return !!requirements.find(req => req.leadId === leadId);
   }
 
+  const handleDeleteLead = async (leadId: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    const result = await deleteLead(leadId);
+    if (result.success) {
+        // Optimistic update
+        setLeads(prev => prev.filter(l => l.id !== leadId));
+        setRequirements(prev => prev.filter(r => r.leadId !== leadId));
+        toast({
+            title: 'Lead Eliminado',
+            description: `El lead "${lead?.name}" ha sido eliminado.`,
+        });
+        router.refresh();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: result.error || 'No se pudo eliminar el lead.',
+        });
+    }
+  };
+
   return (
     <div className="container mx-auto">
       <PageHeader
@@ -96,6 +130,7 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
                 <TableHead>Creado el</TableHead>
                 <TableHead>Formulario</TableHead>
                 <TableHead>Requerimientos</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -137,6 +172,32 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
                             Ver Requerimientos
                         </Button>
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Se eliminará permanentemente el lead "{lead.name}" y todos sus datos asociados, incluyendo los requerimientos.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Eliminar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
