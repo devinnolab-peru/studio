@@ -1,63 +1,59 @@
 
 import type { Project, Lead, ClientRequirements } from './definitions';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-// Helper to get the full path to a data file
-const dataFilePath = (filename: string) => path.join(process.cwd(), 'src', 'data', filename);
-
-// Generic function to read data from a JSON file
-async function readData<T>(filename: string): Promise<T[]> {
-  try {
-    const jsonString = await fs.readFile(dataFilePath(filename), 'utf-8');
-    // Ensure dates are parsed correctly
-    return JSON.parse(jsonString, (key, value) => {
-      if (value && (key.endsWith('Date') || key.endsWith('At'))) {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
-      }
-      return value;
-    }) as T[];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return []; // Return an empty array if the file doesn't exist
-    }
-    console.error(`Error reading ${filename}:`, error);
-    throw error;
-  }
-}
+import { getCollection, convertObjectIdToString, convertStringToObjectId } from './mongodb';
+import { ObjectId } from 'mongodb';
 
 // --- Data Fetching Functions ---
 
 export async function getProjects(): Promise<Project[]> {
-  return await readData<Project>('projects.json');
+  const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
+  const projects = await projectsCollection.find({}).toArray();
+  return projects.map(doc => convertObjectIdToString(doc));
 }
 
 export async function getLeads(): Promise<Lead[]> {
-  return await readData<Lead>('leads.json');
+  const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+  const leads = await leadsCollection.find({}).toArray();
+  return leads.map(doc => convertObjectIdToString(doc));
 }
 
 export async function getClientRequirements(): Promise<ClientRequirements[]> {
-  return await readData<ClientRequirements>('client-requirements.json');
+  const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
+  const requirements = await requirementsCollection.find({}).toArray();
+  return requirements.map(doc => convertObjectIdToString(doc));
 }
 
 export async function getProjectById(id: string, byShareableLink: boolean = false): Promise<Project[] | undefined> {
-    const projects = await getProjects();
+    const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
+    let projects;
     if (byShareableLink) {
-        return projects.filter(p => p.shareableLinkId === id);
+        projects = await projectsCollection.find({ shareableLinkId: id }).toArray();
+    } else {
+        let project;
+        try {
+            project = await projectsCollection.findOne({ _id: convertStringToObjectId(id) });
+        } catch {
+            project = await projectsCollection.findOne({ id });
+        }
+        projects = project ? [project] : [];
     }
-    return projects.filter(p => p.id === id);
+    return projects.map(doc => convertObjectIdToString(doc));
 }
 
 
 export async function getLeadById(leadId: string): Promise<Lead | undefined> {
-    const leads = await getLeads();
-    return leads.find(l => l.id === leadId);
+    const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+    let leadDoc;
+    try {
+        leadDoc = await leadsCollection.findOne({ _id: convertStringToObjectId(leadId) });
+    } catch {
+        leadDoc = await leadsCollection.findOne({ id: leadId });
+    }
+    return leadDoc ? convertObjectIdToString(leadDoc) : undefined;
 }
 
 export async function getRequirementsByLeadId(leadId: string): Promise<ClientRequirements | undefined> {
-    const requirements = await getClientRequirements();
-    return requirements.find(r => r.leadId === leadId);
+    const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
+    const requirementDoc = await requirementsCollection.findOne({ leadId });
+    return requirementDoc ? convertObjectIdToString(requirementDoc) : undefined;
 }

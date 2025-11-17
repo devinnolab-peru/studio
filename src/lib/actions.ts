@@ -3,41 +3,36 @@
 
 import { revalidatePath } from 'next/cache';
 import type { ChangeRequest, ChangeRequestStatus, Document, Lead, Module, Part, Project, Requirement, TimelineEvent, ClientRequirements, ModuleStatus, User } from './definitions';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { sendLeadFormNotification, sendClientConfirmationEmail } from './email';
+import { getCollection, convertObjectIdToString, convertStringToObjectId } from './mongodb';
+import { ObjectId } from 'mongodb';
 
-const dataFilePath = (filename: string) => path.join(process.cwd(), 'src', 'data', filename);
-
-async function readData<T>(filename: string): Promise<T[]> {
+// Helper functions para proyectos
+async function getProjectById(projectId: string): Promise<(Project & { _id?: ObjectId }) | null> {
+    const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
+    let project;
     try {
-        const jsonString = await fs.readFile(dataFilePath(filename), 'utf-8');
-        const data = JSON.parse(jsonString) as any[];
-        // Convertir fechas de string a Date si es necesario
-        return data.map(item => {
-            if (item.createdAt && typeof item.createdAt === 'string') {
-                return { ...item, createdAt: new Date(item.createdAt) };
-            }
-            return item;
-        }) as T[];
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            return []; // Retorna un array vacío si el archivo no existe
-        }
-        console.error(`Error reading ${filename}:`, error);
-        throw error;
+        project = await projectsCollection.findOne({ _id: convertStringToObjectId(projectId) });
+    } catch {
+        project = await projectsCollection.findOne({ id: projectId });
     }
+    return project;
 }
 
-async function writeData<T>(filename: string, data: T[]): Promise<void> {
+async function updateProject(projectId: string, updateData: Partial<Project>): Promise<void> {
+    const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
     try {
-        const jsonString = JSON.stringify(data, null, 2);
-        await fs.writeFile(dataFilePath(filename), jsonString, 'utf-8');
-    } catch (error) {
-        console.error(`Error writing to ${filename}:`, error);
-        throw error;
+        await projectsCollection.updateOne(
+            { _id: convertStringToObjectId(projectId) },
+            { $set: updateData }
+        );
+    } catch {
+        await projectsCollection.updateOne(
+            { id: projectId },
+            { $set: updateData }
+        );
     }
 }
 
@@ -51,12 +46,14 @@ export async function login(prevState: string | undefined, formData: FormData) {
       return { error: 'Por favor, introduce el correo y la contraseña.' };
     }
 
-    const users = await readData<User>('users.json');
-    const user = users.find((u) => u.email === email);
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
+    const userDoc = await usersCollection.findOne({ email });
 
-    if (!user) {
+    if (!userDoc) {
       return { error: 'Usuario no encontrado.' };
     }
+
+    const user = convertObjectIdToString(userDoc);
 
     if (!user.active) {
       return { error: 'Usuario inactivo. Contacta al administrador.' };
@@ -98,10 +95,27 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     const sessionData = JSON.parse(session.value);
-    const users = await readData<User>('users.json');
-    const user = users.find((u) => u.id === sessionData.userId && u.active);
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
     
-    return user || null;
+    // Intentar buscar por ObjectId primero, luego por string id
+    let userDoc;
+    try {
+      userDoc = await usersCollection.findOne({ _id: convertStringToObjectId(sessionData.userId) });
+    } catch {
+      userDoc = await usersCollection.findOne({ id: sessionData.userId });
+    }
+    
+    if (!userDoc) {
+      return null;
+    }
+
+    const user = convertObjectIdToString(userDoc);
+    
+    if (!user.active) {
+      return null;
+    }
+    
+    return user;
   } catch (error) {
     return null;
   }
@@ -110,9 +124,14 @@ export async function getCurrentUser(): Promise<User | null> {
 // --- USER MANAGEMENT ACTIONS ---
 
 export async function getUsers(): Promise<Omit<User, 'password'>[]> {
-  const users = await readData<User>('users.json');
+  const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
+  const users = await usersCollection.find({}).toArray();
   // No devolver las contraseñas por seguridad
-  return users.map(({ password, ...user }) => user);
+  return users.map(doc => {
+    const user = convertObjectIdToString(doc);
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  });
 }
 
 export async function createUser(prevState: any, formData: FormData) {
@@ -126,14 +145,15 @@ export async function createUser(prevState: any, formData: FormData) {
       return { error: 'Todos los campos son obligatorios.' };
     }
 
-    const users = await readData<User>('users.json');
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
     
     // Verificar si el email ya existe
-    if (users.some(u => u.email === email)) {
+    const existingUser = await usersCollection.findOne({ email });
+    if (existingUser) {
       return { error: 'El correo electrónico ya está en uso.' };
     }
 
-    const newUser: User = {
+    const newUser = {
       id: `user-${Date.now()}`,
       email,
       password,
@@ -142,8 +162,7 @@ export async function createUser(prevState: any, formData: FormData) {
       createdAt: new Date(),
     };
 
-    users.push(newUser);
-    await writeData('users.json', users);
+    await usersCollection.insertOne(newUser);
     revalidatePath('/dashboard/configuracion');
     return { success: true, user: { ...newUser, password: '' } };
   } catch (error) {
@@ -164,43 +183,65 @@ export async function updateUser(prevState: any, formData: FormData) {
       return { error: 'Los campos obligatorios están incompletos.' };
     }
 
-    const users = await readData<User>('users.json');
-    const userIndex = users.findIndex(u => u.id === id);
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
+    
+    // Buscar el usuario por ObjectId o por id string
+    let existingUserDoc;
+    try {
+      existingUserDoc = await usersCollection.findOne({ _id: convertStringToObjectId(id) });
+    } catch {
+      existingUserDoc = await usersCollection.findOne({ id });
+    }
 
-    if (userIndex === -1) {
+    if (!existingUserDoc) {
       return { error: 'Usuario no encontrado.' };
     }
 
     // Verificar si el email ya está en uso por otro usuario
-    if (users.some(u => u.email === email && u.id !== id)) {
-      return { error: 'El correo electrónico ya está en uso.' };
+    const emailUser = await usersCollection.findOne({ email });
+    if (emailUser) {
+      const emailUserId = emailUser._id ? emailUser._id.toString() : emailUser.id;
+      if (emailUserId !== id) {
+        return { error: 'El correo electrónico ya está en uso.' };
+      }
     }
 
-    const existingUser = users[userIndex];
+    const existingUser = convertObjectIdToString(existingUserDoc);
     
-    // Preservar el createdAt original, convirtiéndolo a Date si es string
+    // Preservar el createdAt original
     const createdAt = existingUser.createdAt instanceof Date 
       ? existingUser.createdAt 
       : new Date(existingUser.createdAt);
 
-    const updatedUser: User = {
-      id: existingUser.id,
+    const updateData: any = {
       email,
       name,
-      password: existingUser.password, // Mantener la contraseña actual por defecto
       active,
       createdAt,
     };
 
     // Solo actualizar la contraseña si se proporciona una nueva
     if (password && password.trim() !== '') {
-      updatedUser.password = password;
+      updateData.password = password;
+    } else {
+      updateData.password = existingUser.password;
     }
 
-    users[userIndex] = updatedUser;
-    await writeData('users.json', users);
+    // Actualizar usando ObjectId o id string
+    try {
+      await usersCollection.updateOne(
+        { _id: convertStringToObjectId(id) },
+        { $set: updateData }
+      );
+    } catch {
+      await usersCollection.updateOne(
+        { id },
+        { $set: updateData }
+      );
+    }
+
     revalidatePath('/dashboard/configuracion');
-    return { success: true, user: { ...updatedUser, password: '' } };
+    return { success: true, user: { ...updateData, id, password: '' } };
   } catch (error) {
     console.error('Error actualizando usuario:', error);
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -210,21 +251,38 @@ export async function updateUser(prevState: any, formData: FormData) {
 
 export async function deleteUser(userId: string) {
   try {
-    const users = await readData<User>('users.json');
-    const user = users.find(u => u.id === userId);
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
     
-    if (!user) {
+    // Buscar el usuario
+    let userDoc;
+    try {
+      userDoc = await usersCollection.findOne({ _id: convertStringToObjectId(userId) });
+    } catch {
+      userDoc = await usersCollection.findOne({ id: userId });
+    }
+    
+    if (!userDoc) {
       return { error: 'Usuario no encontrado.' };
     }
 
     // No permitir eliminar el último usuario activo
-    const activeUsers = users.filter(u => u.active && u.id !== userId);
-    if (activeUsers.length === 0) {
+    const activeUsers = await usersCollection.find({ active: true }).toArray();
+    const activeUsersFiltered = activeUsers.filter(u => {
+      const uid = u._id ? u._id.toString() : u.id;
+      return uid !== userId;
+    });
+    
+    if (activeUsersFiltered.length === 0) {
       return { error: 'No se puede eliminar el último usuario activo.' };
     }
 
-    const filteredUsers = users.filter(u => u.id !== userId);
-    await writeData('users.json', filteredUsers);
+    // Eliminar usando ObjectId o id string
+    try {
+      await usersCollection.deleteOne({ _id: convertStringToObjectId(userId) });
+    } catch {
+      await usersCollection.deleteOne({ id: userId });
+    }
+    
     revalidatePath('/dashboard/configuracion');
     return { success: true };
   } catch (error) {
@@ -235,25 +293,52 @@ export async function deleteUser(userId: string) {
 
 export async function toggleUserActive(userId: string) {
   try {
-    const users = await readData<User>('users.json');
-    const user = users.find(u => u.id === userId);
+    const usersCollection = await getCollection<User & { _id?: ObjectId }>('users');
     
-    if (!user) {
+    // Buscar el usuario
+    let userDoc;
+    try {
+      userDoc = await usersCollection.findOne({ _id: convertStringToObjectId(userId) });
+    } catch {
+      userDoc = await usersCollection.findOne({ id: userId });
+    }
+    
+    if (!userDoc) {
       return { error: 'Usuario no encontrado.' };
     }
 
+    const user = convertObjectIdToString(userDoc);
+
     // No permitir desactivar el último usuario activo
     if (user.active) {
-      const activeUsers = users.filter(u => u.active && u.id !== userId);
-      if (activeUsers.length === 0) {
+      const activeUsers = await usersCollection.find({ active: true }).toArray();
+      const activeUsersFiltered = activeUsers.filter(u => {
+        const uid = u._id ? u._id.toString() : u.id;
+        return uid !== userId;
+      });
+      
+      if (activeUsersFiltered.length === 0) {
         return { error: 'No se puede desactivar el último usuario activo.' };
       }
     }
 
-    user.active = !user.active;
-    await writeData('users.json', users);
+    const newActive = !user.active;
+    
+    // Actualizar usando ObjectId o id string
+    try {
+      await usersCollection.updateOne(
+        { _id: convertStringToObjectId(userId) },
+        { $set: { active: newActive } }
+      );
+    } catch {
+      await usersCollection.updateOne(
+        { id: userId },
+        { $set: { active: newActive } }
+      );
+    }
+    
     revalidatePath('/dashboard/configuracion');
-    return { success: true, user: { ...user, password: '' } };
+    return { success: true, user: { ...user, active: newActive, password: '' } };
   } catch (error) {
     console.error(error);
     return { error: 'Ocurrió un error al cambiar el estado del usuario.' };
@@ -264,7 +349,7 @@ export async function toggleUserActive(userId: string) {
 // --- PROJECT ACTIONS ---
 
 export async function addProject(projectData: Omit<Project, 'id' | 'shareableLinkId' | 'modules' | 'timelineEvents' | 'changeRequests' | 'initialRequirements' | 'projectDocuments'>) {
-    const projects = await readData<Project>('projects.json');
+    const projectsCollection = await getCollection<Project & { _id?: ObjectId }>('projects');
     const newProject: Project = {
         ...projectData,
         id: `proj-${Date.now()}`,
@@ -282,8 +367,7 @@ export async function addProject(projectData: Omit<Project, 'id' | 'shareableLin
         deadline: new Date(projectData.deadline),
     };
     
-    projects.push(newProject);
-    await writeData('projects.json', projects);
+    await projectsCollection.insertOne(newProject);
     revalidatePath('/dashboard');
     return { success: true, project: newProject };
 }
@@ -292,10 +376,10 @@ export async function addProject(projectData: Omit<Project, 'id' | 'shareableLin
 // --- MODULE ACTIONS ---
 
 export async function addModule(projectId: string, moduleData: Omit<Module, 'id' | 'parts' | 'stages' | 'requirements' | 'reviews' | 'deliverables' | 'documents'>) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const newModule: Module = {
         ...moduleData,
         id: `mod-${Date.now()}`,
@@ -316,16 +400,16 @@ export async function addModule(projectId: string, moduleData: Omit<Module, 'id'
         actor: 'admin'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, module: newModule };
 }
 
 export async function addModulesFromAI(projectId: string, newModules: Omit<Module, 'id' | 'parts' | 'stages' | 'requirements' | 'reviews' | 'deliverables' | 'documents'>[]) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
     
+    const project = convertObjectIdToString(projectDoc);
     const modulesToAdd: Module[] = newModules.map(m => ({
         ...m,
         id: `mod-${Date.now()}-${Math.random()}`,
@@ -346,16 +430,16 @@ export async function addModulesFromAI(projectId: string, newModules: Omit<Modul
         actor: 'sistema'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, modules: modulesToAdd };
 }
 
 export async function editModule(projectId: string, updatedModule: Module) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     updatedModule.deadline = new Date(updatedModule.deadline);
     project.modules = project.modules.map(m => m.id === updatedModule.id ? updatedModule : m);
     project.timelineEvents.unshift({
@@ -364,16 +448,16 @@ export async function editModule(projectId: string, updatedModule: Module) {
         actor: 'admin'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, module: updatedModule };
 }
 
 export async function deleteModule(projectId: string, moduleId: string) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const moduleName = project.modules.find(m => m.id === moduleId)?.name || 'Desconocido';
     project.modules = project.modules.filter(m => m.id !== moduleId);
     project.timelineEvents.unshift({
@@ -382,16 +466,16 @@ export async function deleteModule(projectId: string, moduleId: string) {
         actor: 'admin'
     });
     
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true };
 }
 
 export async function updateModuleParts(projectId: string, moduleId: string, updatedParts: Part[]) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const module = project.modules.find(m => m.id === moduleId);
     if (!module) return { error: 'Módulo no encontrado.' };
     
@@ -403,18 +487,17 @@ export async function updateModuleParts(projectId: string, moduleId: string, upd
         actor: 'admin'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     revalidatePath(`/client-view/${project.shareableLinkId}`);
     return { success: true };
 }
 
 export async function clientApproveModule(projectId: string, moduleId: string) {
-    const projects = await readData<Project>('projects.json');
-    const projectIndex = projects.findIndex(p => p.id === projectId);
-    if (projectIndex === -1) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
-    const project = projects[projectIndex];
+    const project = convertObjectIdToString(projectDoc);
     const module = project.modules.find(m => m.id === moduleId);
     if (!module) return { error: 'Módulo no encontrado.' };
     
@@ -425,17 +508,16 @@ export async function clientApproveModule(projectId: string, moduleId: string) {
         eventDate: new Date(),
         actor: 'cliente'
     });
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/client-view/${project.shareableLinkId}`);
     return { success: true, updatedProject: project };
 }
 
 export async function clientApprovePart(projectId: string, moduleId: string, partId: string) {
-    const projects = await readData<Project>('projects.json');
-    const projectIndex = projects.findIndex(p => p.id === projectId);
-    if (projectIndex === -1) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
-    const project = projects[projectIndex];
+    const project = convertObjectIdToString(projectDoc);
     const module = project.modules.find(m => m.id === moduleId);
     if (!module) return { error: 'Módulo no encontrado.' };
     
@@ -450,17 +532,16 @@ export async function clientApprovePart(projectId: string, moduleId: string, par
         actor: 'cliente'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/client-view/${project.shareableLinkId}`);
     return { success: true, updatedProject: project };
 }
 
 export async function approveModule(projectId: string, moduleId: string) {
-    const projects = await readData<Project>('projects.json');
-    const projectIndex = projects.findIndex(p => p.id === projectId);
-    if (projectIndex === -1) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
-    const project = projects[projectIndex];
+    const project = convertObjectIdToString(projectDoc);
     const module = project.modules.find(m => m.id === moduleId);
     if (!module) return { error: 'Módulo no encontrado.' };
     
@@ -472,7 +553,7 @@ export async function approveModule(projectId: string, moduleId: string) {
         actor: 'admin'
     });
     
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, updatedProject: project };
 }
@@ -486,40 +567,39 @@ export async function addChangeRequest(projectId: string, formData: FormData) {
     return { error: 'Los detalles de la solicitud son obligatorios.' };
   }
 
-  const projects = await readData<Project>('projects.json');
-  const project = projects.find(p => p.id === projectId);
-
-  if (project) {
-      const newRequest: ChangeRequest = {
-          id: `cr-${Date.now()}`,
-          requestDetails,
-          status: 'Pendiente de Aprobación',
-          submittedAt: new Date(),
-      };
-      project.changeRequests.push(newRequest);
-      
-      const timelineEvent: TimelineEvent = {
-          eventDescription: `El cliente ha enviado una nueva solicitud de cambio.`,
-          eventDate: new Date(),
-          actor: 'cliente' as const
-      };
-      project.timelineEvents.unshift(timelineEvent);
-
-      await writeData('projects.json', projects);
-      revalidatePath(`/client-view/${project.shareableLinkId}`);
-      revalidatePath(`/dashboard/projects/${projectId}`);
-  } else {
+  const projectDoc = await getProjectById(projectId);
+  if (!projectDoc) {
     return { error: 'Proyecto no encontrado.' };
   }
+
+  const project = convertObjectIdToString(projectDoc);
+  const newRequest: ChangeRequest = {
+      id: `cr-${Date.now()}`,
+      requestDetails,
+      status: 'Pendiente de Aprobación',
+      submittedAt: new Date(),
+  };
+  project.changeRequests.push(newRequest);
+  
+  const timelineEvent: TimelineEvent = {
+      eventDescription: `El cliente ha enviado una nueva solicitud de cambio.`,
+      eventDate: new Date(),
+      actor: 'cliente' as const
+  };
+  project.timelineEvents.unshift(timelineEvent);
+
+  await updateProject(projectId, project);
+  revalidatePath(`/client-view/${project.shareableLinkId}`);
+  revalidatePath(`/dashboard/projects/${projectId}`);
 
   return { success: 'Solicitud de cambio enviada con éxito.' };
 }
 
 export async function updateChangeRequestStatus(projectId: string, requestId: string, status: ChangeRequestStatus) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const request = project.changeRequests.find(r => r.id === requestId);
     if (!request) return { error: 'Solicitud no encontrada.' };
 
@@ -530,7 +610,7 @@ export async function updateChangeRequestStatus(projectId: string, requestId: st
         actor: 'admin'
     });
     
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true };
 }
@@ -539,10 +619,10 @@ export async function updateChangeRequestStatus(projectId: string, requestId: st
 // --- REQUIREMENT ACTIONS ---
 
 export async function addRequirement(projectId: string, requirementData: Omit<Requirement, 'id'>) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const newRequirement: Requirement = {
         ...requirementData,
         id: `req-${Date.now()}`,
@@ -555,16 +635,16 @@ export async function addRequirement(projectId: string, requirementData: Omit<Re
         actor: 'admin'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, requirement: newRequirement };
 }
 
 export async function editRequirement(projectId: string, updatedRequirement: Requirement) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     project.initialRequirements = project.initialRequirements.map(r => r.id === updatedRequirement.id ? updatedRequirement : r);
     project.timelineEvents.unshift({
         eventDescription: `Requisito actualizado: "${updatedRequirement.title}"`,
@@ -572,16 +652,16 @@ export async function editRequirement(projectId: string, updatedRequirement: Req
         actor: 'admin'
     });
     
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, requirement: updatedRequirement };
 }
 
 export async function onDeleteRequirement(projectId: string, requirementId: string) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const requirementTitle = project.initialRequirements.find(r => r.id === requirementId)?.title || 'Desconocido';
     project.initialRequirements = project.initialRequirements.filter(r => r.id !== requirementId);
 
@@ -591,7 +671,7 @@ if (!project) return { error: 'Proyecto no encontrado.' };
         actor: 'admin'
     });
     
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true };
 }
@@ -599,10 +679,10 @@ if (!project) return { error: 'Proyecto no encontrado.' };
 // --- DOCUMENT ACTIONS ---
 
 export async function addDocument(projectId: string, documentData: Omit<Document, 'id'>) {
-    const projects = await readData<Project>('projects.json');
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { error: 'Proyecto no encontrado.' };
+    const projectDoc = await getProjectById(projectId);
+    if (!projectDoc) return { error: 'Proyecto no encontrado.' };
 
+    const project = convertObjectIdToString(projectDoc);
     const newDocument: Document = {
         ...documentData,
         id: `doc-${Date.now()}`,
@@ -619,7 +699,7 @@ export async function addDocument(projectId: string, documentData: Omit<Document
         actor: 'admin'
     });
 
-    await writeData('projects.json', projects);
+    await updateProject(projectId, project);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { success: true, document: newDocument };
 }
@@ -630,7 +710,7 @@ export async function createLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'form
     if (!leadData.name || !leadData.email) {
         return { error: 'El nombre y el correo electrónico son obligatorios.' };
     }
-    const leads = await readData<Lead>('leads.json');
+    const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
     const newLead: Lead = {
       id: `lead-${Date.now()}`,
       name: leadData.name,
@@ -640,53 +720,69 @@ export async function createLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'form
       createdAt: new Date(),
       formLink: `/leads/lead-${Date.now()}/form`,
     };
-    leads.unshift(newLead);
-    await writeData('leads.json', leads);
+    await leadsCollection.insertOne(newLead);
     revalidatePath('/dashboard/leads');
     return { success: true, lead: newLead };
 }
 
 export async function submitLeadForm(leadId: string, formData: any) {
-    const leads = await readData<Lead>('leads.json');
-    const requirements = await readData<ClientRequirements>('client-requirements.json');
+    const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+    const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
 
-    const lead = leads.find(l => l.id === leadId);
-    if (lead) {
-        lead.status = 'Propuesta Enviada';
-        lead.name = formData.contactInfo.name;
-        lead.company = formData.contactInfo.company;
-        lead.email = formData.contactInfo.email;
+    let leadDoc;
+    try {
+        leadDoc = await leadsCollection.findOne({ _id: convertStringToObjectId(leadId) });
+    } catch {
+        leadDoc = await leadsCollection.findOne({ id: leadId });
+    }
 
-        const requirementData: ClientRequirements = {
-            leadId,
-            submittedAt: new Date(),
-            ...formData,
-        };
-
-        requirements.push(requirementData);
-        
-        await writeData('leads.json', leads);
-        await writeData('client-requirements.json', requirements);
-
-        // Enviar emails de notificación (no bloquean si fallan)
-        try {
-            // Email de notificación al administrador
-            await sendLeadFormNotification(requirementData, leadId);
-        } catch (error) {
-            console.error('Error al enviar email de notificación al administrador:', error);
-        }
-
-        try {
-            // Email de confirmación al cliente
-            await sendClientConfirmationEmail(requirementData);
-        } catch (error) {
-            console.error('Error al enviar email de confirmación al cliente:', error);
-        }
-
-        revalidatePath('/dashboard/leads');
-    } else {
+    if (!leadDoc) {
         return { error: 'Lead no encontrado' };
     }
 
+    const lead = convertObjectIdToString(leadDoc);
+    lead.status = 'Propuesta Enviada';
+    lead.name = formData.contactInfo.name;
+    lead.company = formData.contactInfo.company;
+    lead.email = formData.contactInfo.email;
+
+    const requirementData: ClientRequirements = {
+        leadId,
+        submittedAt: new Date(),
+        ...formData,
+    };
+
+    // Actualizar lead
+    try {
+        await leadsCollection.updateOne(
+            { _id: convertStringToObjectId(leadId) },
+            { $set: lead }
+        );
+    } catch {
+        await leadsCollection.updateOne(
+            { id: leadId },
+            { $set: lead }
+        );
+    }
+
+    // Insertar requirement
+    await requirementsCollection.insertOne(requirementData);
+
+    // Enviar emails de notificación (no bloquean si fallan)
+    try {
+        // Email de notificación al administrador
+        await sendLeadFormNotification(requirementData, leadId);
+    } catch (error) {
+        console.error('Error al enviar email de notificación al administrador:', error);
+    }
+
+    try {
+        // Email de confirmación al cliente
+        await sendClientConfirmationEmail(requirementData);
+    } catch (error) {
+        console.error('Error al enviar email de confirmación al cliente:', error);
+    }
+
+    revalidatePath('/dashboard/leads');
     return { success: true };
 }

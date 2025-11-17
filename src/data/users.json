@@ -6,5 +6,13 @@
     "password": "admin123",
     "active": true,
     "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "user-2",
+    "email": "usuario@devinnolab.com",
+    "password": "DevInno2024",
+    "name": "Usuario DevInnoLab",
+    "active": true,
+    "createdAt": "2024-01-15T00:00:00.000Z"
   }
 ]
