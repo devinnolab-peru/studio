@@ -62,28 +62,28 @@ export function CreateProjectDialog({ isOpen, onClose, onAddProject }: CreatePro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Proyecto</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl">Crear Nuevo Proyecto</DialogTitle>
+          <DialogDescription className="text-sm">
             Rellene los detalles a continuación para crear un nuevo proyecto.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="name" className="sm:text-right">
               Nombre
             </Label>
-            <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-3" />
+            <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-1 sm:col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="description" className="sm:text-right">
               Descripción
             </Label>
-            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-3" />
+            <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="col-span-1 sm:col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="start-date" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="start-date" className="sm:text-right">
               Fecha de Inicio
             </Label>
              <Popover>
@@ -91,7 +91,7 @@ export function CreateProjectDialog({ isOpen, onClose, onAddProject }: CreatePro
                 <Button
                     variant={"outline"}
                     className={cn(
-                    "w-[240px] justify-start text-left font-normal col-span-3",
+                    "w-full sm:w-[240px] justify-start text-left font-normal col-span-1 sm:col-span-3",
                     !startDate && "text-muted-foreground"
                     )}
                 >
@@ -110,8 +110,8 @@ export function CreateProjectDialog({ isOpen, onClose, onAddProject }: CreatePro
                 </PopoverContent>
             </Popover>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="deadline" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <Label htmlFor="deadline" className="sm:text-right">
               Fecha Límite
             </Label>
             <Popover>
@@ -119,7 +119,7 @@ export function CreateProjectDialog({ isOpen, onClose, onAddProject }: CreatePro
                 <Button
                     variant={"outline"}
                     className={cn(
-                    "w-[240px] justify-start text-left font-normal col-span-3",
+                    "w-full sm:w-[240px] justify-start text-left font-normal col-span-1 sm:col-span-3",
                     !deadline && "text-muted-foreground"
                     )}
                 >
@@ -139,8 +139,11 @@ export function CreateProjectDialog({ isOpen, onClose, onAddProject }: CreatePro
             </Popover>
           </div>
         </div>
-        <DialogFooter>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Crear Proyecto
           </Button>

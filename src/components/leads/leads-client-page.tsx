@@ -120,7 +120,83 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          {/* Mobile Cards View */}
+          <div className="block sm:hidden space-y-4">
+            {leads.map((lead) => (
+              <Card key={lead.id}>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{lead.name}</p>
+                        <p className="text-sm text-muted-foreground">{lead.company}</p>
+                        <p className="text-sm text-muted-foreground">{lead.email}</p>
+                      </div>
+                      <StatusBadge status={lead.status as any} />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Creado: {format(lead.createdAt, 'PPP', { locale: es })}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="ghost" size="sm" title="Enviar enlace por correo">
+                        <Mail className="h-4 w-4 mr-1" />
+                        Email
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Copiar enlace" onClick={() => copyToClipboard(lead.formLink)}>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copiar
+                      </Button>
+                      <Link href={lead.formLink} target="_blank">
+                        <Button variant="ghost" size="sm" title="Ver formulario">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver
+                        </Button>
+                      </Link>
+                      <Link href={`/dashboard/leads/${lead.id}/requirements`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!hasSubmittedRequirements(lead.id)}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          Requerimientos
+                        </Button>
+                      </Link>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción no se puede deshacer. Se eliminará permanentemente el lead "{lead.name}" y todos sus datos asociados, incluyendo los requerimientos.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteLead(lead.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Eliminar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
@@ -203,6 +279,7 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
        <CreateLeadDialog

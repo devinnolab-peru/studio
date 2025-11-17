@@ -207,71 +207,134 @@ export default function ConfiguracionPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Fecha de Creación</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No hay usuarios registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.active ? 'default' : 'secondary'}>
-                        {user.active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString('es-ES')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+          {/* Mobile Cards View */}
+          <div className="block sm:hidden space-y-4">
+            {users.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No hay usuarios registrados
+              </p>
+            ) : (
+              users.map((user) => (
+                <Card key={user.id}>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Creado: {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                          </p>
+                        </div>
+                        <Badge variant={user.active ? 'default' : 'secondary'}>
+                          {user.active ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t">
                         <div className="flex items-center gap-2">
-                          <Label htmlFor={`active-${user.id}`} className="text-sm">
+                          <Label htmlFor={`active-mobile-${user.id}`} className="text-sm">
                             {user.active ? 'Activo' : 'Inactivo'}
                           </Label>
                           <Switch
-                            id={`active-${user.id}`}
+                            id={`active-mobile-${user.id}`}
                             checked={user.active}
                             onCheckedChange={() => handleToggleActive(user.id)}
                             disabled={isPending}
                           />
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(user.id)}
-                          disabled={isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(user.id)}
+                            disabled={isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha de Creación</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      No hay usuarios registrados
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.active ? 'default' : 'secondary'}>
+                          {user.active ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`active-${user.id}`} className="text-sm">
+                              {user.active ? 'Activo' : 'Inactivo'}
+                            </Label>
+                            <Switch
+                              id={`active-${user.id}`}
+                              checked={user.active}
+                              onCheckedChange={() => handleToggleActive(user.id)}
+                              disabled={isPending}
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(user.id)}
+                            disabled={isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -348,10 +411,10 @@ function UserDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg sm:text-xl">{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle>
+          <DialogDescription className="text-sm">
             {isEditing
               ? 'Modifica la información del usuario.'
               : 'Completa los datos para crear un nuevo usuario.'}
@@ -362,26 +425,28 @@ function UserDialog({
             <input type="hidden" name="id" value={user.id} />
           )}
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre</Label>
+            <Label htmlFor="name" className="text-sm sm:text-base">Nombre</Label>
             <Input
               id="name"
               name="name"
               required
               defaultValue={user?.name || ''}
+              className="text-sm sm:text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
               required
               defaultValue={user?.email || ''}
+              className="text-sm sm:text-base"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">
+            <Label htmlFor="password" className="text-sm sm:text-base">
               {isEditing ? 'Nueva Contraseña (dejar vacío para mantener la actual)' : 'Contraseña'}
             </Label>
             <Input
@@ -390,6 +455,7 @@ function UserDialog({
               type="password"
               required={!isEditing}
               minLength={6}
+              className="text-sm sm:text-base"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -398,13 +464,13 @@ function UserDialog({
               checked={isActive}
               onCheckedChange={setIsActive}
             />
-            <Label htmlFor="active">Usuario activo</Label>
+            <Label htmlFor="active" className="text-sm sm:text-base">Usuario activo</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="w-full sm:w-auto">
               {isEditing ? 'Guardar Cambios' : 'Crear Usuario'}
             </Button>
           </DialogFooter>
