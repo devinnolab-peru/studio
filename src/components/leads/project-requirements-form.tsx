@@ -22,11 +22,91 @@ interface ProjectRequirementsFormProps {
 }
 
 const COMMON_FEATURES: { [key: string]: string[] } = {
-    web: ["Blog", "Galería de Imágenes", "Formulario de Contacto Avanzado", "Mapa Interactivo"],
-    movil: ["Notificaciones Push", "Geolocalización", "Acceso a Cámara/Galería", "Login con Biometría"],
-    software: ["Dashboard de Analíticas", "Gestión de Roles y Permisos", "Importación/Exportación de Datos", "Integración con APIs de Terceros"],
-    ecommerce: ["Carrito de Compras", "Pasarelas de Pago (Stripe/PayPal)", "Gestión de Inventario", "Sistema de Reseñas de Productos", "Cupones de Descuento"],
-    otro: ["Login de Usuarios", "Pagos en línea", "Panel de Administración", "Notificaciones por email", "Integración con API externa", "Reportes y Analíticas"],
+    web: [
+        "Blog",
+        "Galería de Imágenes",
+        "Formulario de Contacto Avanzado",
+        "Mapa Interactivo",
+        "Sistema de Búsqueda",
+        "Multidioma (i18n)",
+        "SEO Optimizado",
+        "Integración con Redes Sociales",
+        "Newsletter/Suscripciones",
+        "Chat en Vivo",
+        "Sistema de Comentarios",
+        "Calendario de Eventos",
+        "Portafolio de Trabajos",
+        "Testimonios/Reseñas",
+        "Sistema de Reservas/Citas"
+    ],
+    movil: [
+        "Notificaciones Push",
+        "Geolocalización",
+        "Acceso a Cámara/Galería",
+        "Login con Biometría",
+        "Modo Offline",
+        "Sincronización en la Nube",
+        "Escaneo de Códigos QR",
+        "Pagos Móviles",
+        "Chat/Mensajería",
+        "Reproductor de Audio/Video",
+        "Mapas y Navegación",
+        "Reconocimiento de Voz",
+        "Realidad Aumentada (AR)",
+        "Compartir en Redes Sociales",
+        "Widgets para Pantalla de Inicio"
+    ],
+    software: [
+        "Dashboard de Analíticas",
+        "Gestión de Roles y Permisos",
+        "Importación/Exportación de Datos",
+        "Integración con APIs de Terceros",
+        "Sistema de Autenticación (2FA)",
+        "Auditoría y Logs",
+        "Backup Automático",
+        "Búsqueda Avanzada/Filtros",
+        "Exportación de Reportes (PDF/Excel)",
+        "Sistema de Notificaciones",
+        "Gestión de Tareas/Proyectos",
+        "Colaboración en Tiempo Real",
+        "API REST/GraphQL",
+        "Webhooks",
+        "Integración con Email/SMS"
+    ],
+    ecommerce: [
+        "Carrito de Compras",
+        "Pasarelas de Pago (Stripe/PayPal)",
+        "Gestión de Inventario",
+        "Sistema de Reseñas de Productos",
+        "Cupones de Descuento",
+        "Wishlist/Lista de Deseos",
+        "Comparador de Productos",
+        "Búsqueda Avanzada",
+        "Filtros por Categoría/Precio",
+        "Sistema de Envíos",
+        "Tracking de Pedidos",
+        "Programa de Fidelización",
+        "Productos Relacionados",
+        "Carrito Abandonado",
+        "Integración con Marketplaces"
+    ],
+    otro: [
+        "Login de Usuarios",
+        "Pagos en línea",
+        "Panel de Administración",
+        "Notificaciones por email",
+        "Integración con API externa",
+        "Reportes y Analíticas",
+        "Gestión de Contenido (CMS)",
+        "Sistema de Archivos",
+        "Chatbot/Asistente Virtual",
+        "Calendario y Agendamiento",
+        "Videollamadas/Reuniones",
+        "Sistema de Facturación",
+        "Gestión de Clientes (CRM)",
+        "Base de Conocimientos/FAQ",
+        "Sistema de Tickets/Soporte"
+    ],
 };
 
 const PLATFORMS = ["Aplicación Web", "Aplicación iOS", "Aplicación Android", "Otro"];
@@ -37,12 +117,12 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
-        contactInfo: { name: '', company: '', email: '', phone: '' },
-        projectInfo: { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', budget: '' },
+        contactInfo: { name: '', company: '', email: '', phone: '', clientType: 'particular' as 'empresa' | 'particular' },
+        projectInfo: { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', country: '' },
         scopeAndFeatures: { platforms: [] as string[], commonFeatures: [] as string[], otherFeatures: [] as string[] },
         designAndUX: { hasBrandIdentity: 'no', brandFiles: [], designInspirations: ['', ''], lookAndFeel: '' },
         contentAndStrategy: { contentCreation: '', marketingPlan: '', maintenance: '' },
-        attachments: [],
+        attachments: [] as File[],
     });
     
     const [otherFeatureInput, setOtherFeatureInput] = useState('');
@@ -101,33 +181,97 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
         handleChange('designAndUX', 'designInspirations', newInspirations);
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setFormData(prev => ({
+            ...prev,
+            attachments: [...prev.attachments, ...files],
+        }));
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            attachments: prev.attachments.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
-        const result = await submitLeadForm(leadId, formData);
-        
-        setIsLoading(false);
+        try {
+            // Subir archivos a Google Drive si hay archivos
+            let uploadedFilesData: Array<{ name: string; url: string }> = [];
+            
+            if (formData.attachments.length > 0) {
+                const uploadFormData = new FormData();
+                uploadFormData.append('leadId', leadId);
+                formData.attachments.forEach((file) => {
+                    uploadFormData.append('files', file);
+                });
 
-        if (result.success) {
+                const uploadResponse = await fetch('/api/upload-files', {
+                    method: 'POST',
+                    body: uploadFormData,
+                });
+
+                if (uploadResponse.ok) {
+                    const uploadResult = await uploadResponse.json();
+                    uploadedFilesData = uploadResult.uploadedFiles || [];
+                    
+                    if (uploadResult.errors && uploadResult.errors.length > 0) {
+                        toast({
+                            variant: 'destructive',
+                            title: "Advertencia",
+                            description: `Algunos archivos no se pudieron subir: ${uploadResult.errors.join(', ')}`,
+                        });
+                    }
+                } else {
+                    toast({
+                        variant: 'destructive',
+                        title: "Error",
+                        description: "No se pudieron subir los archivos. El formulario se enviará sin los archivos.",
+                    });
+                }
+            }
+
+            // Enviar el formulario con la información de archivos subidos
+            const formDataToSubmit = {
+                ...formData,
+                attachments: uploadedFilesData,
+            };
+            
+            const result = await submitLeadForm(leadId, formDataToSubmit);
+            
+            if (result.success) {
+                toast({
+                    title: "Requerimientos Enviados",
+                    description: "Gracias por completar el formulario. Nos pondremos en contacto contigo pronto.",
+                });
+                onSubmitSuccess();
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: "Error",
+                    description: result.error || "No se pudo enviar el formulario.",
+                });
+            }
+        } catch (error) {
             toast({
-                title: "Requerimientos Enviados",
-                description: "Gracias por completar el formulario. Nos pondremos en contacto contigo pronto.",
-            });
-            onSubmitSuccess();
-        } else {
-             toast({
                 variant: 'destructive',
                 title: "Error",
-                description: result.error || "No se pudo enviar el formulario.",
+                description: "Ocurrió un error al enviar el formulario.",
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const nextStep = () => setCurrentStep(prev => prev + 1);
     const prevStep = () => setCurrentStep(prev => prev > 1 ? prev - 1 : 1);
 
-    const totalSteps = 6;
+    const totalSteps = 5;
 
 
   return (
@@ -153,15 +297,34 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                             <CardDescription>Empecemos con lo básico. ¿Quién eres?</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>¿Eres una empresa o particular?</Label>
+                                <RadioGroup 
+                                    value={formData.contactInfo.clientType} 
+                                    onValueChange={(value: 'empresa' | 'particular') => handleChange('contactInfo', 'clientType', value)}
+                                    className="flex gap-4"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="particular" id="client-particular" />
+                                        <Label htmlFor="client-particular">Particular</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="empresa" id="client-empresa" />
+                                        <Label htmlFor="client-empresa">Empresa</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Nombre Completo</Label>
                                     <Input id="name" value={formData.contactInfo.name} onChange={e => handleChange('contactInfo', 'name', e.target.value)} required />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="company">Empresa</Label>
-                                    <Input id="company" value={formData.contactInfo.company} onChange={e => handleChange('contactInfo', 'company', e.target.value)} />
-                                </div>
+                                {formData.contactInfo.clientType === 'empresa' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="company">Empresa</Label>
+                                        <Input id="company" value={formData.contactInfo.company} onChange={e => handleChange('contactInfo', 'company', e.target.value)} />
+                                    </div>
+                                )}
                             </div>
                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -210,19 +373,8 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                                     <Input id="competitors" value={formData.projectInfo.competitors} onChange={e => handleChange('projectInfo', 'competitors', e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="budget">Presupuesto Estimado</Label>
-                                    <Select value={formData.projectInfo.budget} onValueChange={value => handleChange('projectInfo', 'budget', value)}>
-                                        <SelectTrigger id="budget">
-                                            <SelectValue placeholder="Selecciona un rango" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="<5k">Menos de $5,000</SelectItem>
-                                            <SelectItem value="5k-15k">$5,000 - $15,000</SelectItem>
-                                            <SelectItem value="15k-30k">$15,000 - $30,000</SelectItem>
-                                            <SelectItem value="30k-50k">$30,000 - $50,000</SelectItem>
-                                            <SelectItem value=">50k">Más de $50,000</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Label htmlFor="country">País</Label>
+                                    <Input id="country" value={formData.projectInfo.country} onChange={e => handleChange('projectInfo', 'country', e.target.value)} placeholder="Ej: Perú, México, España" />
                                 </div>
                             </div>
                         </CardContent>
@@ -338,17 +490,13 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                                     </div>
                                 </RadioGroup>
                             </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="brandFiles">Sube tu logo y manual de marca si los tienes (opcional)</Label>
-                                <Input id="brandFiles" type="file" multiple disabled />
-                            </div>
                             <div className="space-y-2">
                                 <Label>Menciona 2 o 3 sitios web o apps cuyo diseño te guste</Label>
                                 <Input placeholder="https://www.apple.com" value={formData.designAndUX.designInspirations[0]} onChange={e => handleInspirationChange(0, e.target.value)} />
                                 <Input placeholder="https://stripe.com" value={formData.designAndUX.designInspirations[1]} onChange={e => handleInspirationChange(1, e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="lookAndFeel">Describe el estilo visual que buscas (p. ej., Moderno, Juguetón, Corporativo)</Label>
+                                <Label htmlFor="lookAndFeel">Describe el estilo visual que buscas (p. ej., Moderno, Minimalista, Corporativo)</Label>
                                 <Textarea id="lookAndFeel" rows={3} value={formData.designAndUX.lookAndFeel} onChange={e => handleChange('designAndUX', 'lookAndFeel', e.target.value)} />
                             </div>
                         </CardContent>
@@ -364,46 +512,16 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                             <CardTitle>Contenido y Estrategia</CardTitle>
                             <CardDescription>Pensemos a futuro sobre el proyecto.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="contentCreation">¿Quién se encargará de crear el contenido inicial (textos, imágenes, etc.)?</Label>
-                                <Textarea id="contentCreation" rows={3} value={formData.contentAndStrategy.contentCreation} onChange={e => handleChange('contentAndStrategy', 'contentCreation', e.target.value)} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="marketingPlan">¿Tienes algún plan de marketing para después del lanzamiento?</Label>
-                                <Textarea id="marketingPlan" rows={3} value={formData.contentAndStrategy.marketingPlan} onChange={e => handleChange('contentAndStrategy', 'marketingPlan', e.target.value)} />
-                            </div>
+                         <CardContent className="space-y-4">
                              <div className="space-y-2">
-                                <Label htmlFor="maintenance">¿Estás interesado en un plan de mantenimiento y soporte continuo?</Label>
-                                <Textarea id="maintenance" rows={3} value={formData.contentAndStrategy.maintenance} onChange={e => handleChange('contentAndStrategy', 'maintenance', e.target.value)} />
-                            </div>
-                        </CardContent>
-                        <CardFooter className="justify-between">
-                            <Button variant="outline" onClick={prevStep}>Anterior</Button>
-                            <Button onClick={nextStep}>Siguiente</Button>
-                        </CardFooter>
-                    </>
-                )}
-                {currentStep === 6 && (
-                    <>
-                        <CardHeader>
-                            <CardTitle>Archivos Adjuntos</CardTitle>
-                            <CardDescription>¿Tienes documentos de referencia? Súbelos aquí.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="attachments">Arrastra y suelta archivos o haz clic para seleccionar (PDF, DOCX, imágenes)</Label>
-                                <div className="flex items-center justify-center w-full">
-                                    <label htmlFor="attachments" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra y suelta</p>
-                                            <p className="text-xs text-muted-foreground">PDF, DOCX, PNG, JPG</p>
-                                        </div>
-                                        <Input id="attachments" type="file" className="hidden" multiple disabled />
-                                    </label>
-                                </div>
-                            </div>
-                        </CardContent>
+                                 <Label htmlFor="marketingPlan">¿Tienes algún plan de marketing para después del lanzamiento?</Label>
+                                 <Textarea id="marketingPlan" rows={3} value={formData.contentAndStrategy.marketingPlan} onChange={e => handleChange('contentAndStrategy', 'marketingPlan', e.target.value)} />
+                             </div>
+                              <div className="space-y-2">
+                                 <Label htmlFor="maintenance">¿Estás interesado en un plan de mantenimiento y soporte continuo?</Label>
+                                 <Textarea id="maintenance" rows={3} value={formData.contentAndStrategy.maintenance} onChange={e => handleChange('contentAndStrategy', 'maintenance', e.target.value)} />
+                             </div>
+                         </CardContent>
                         <CardFooter className="justify-between">
                             <Button variant="outline" onClick={prevStep}>Anterior</Button>
                             <Button type="submit" disabled={isLoading}>

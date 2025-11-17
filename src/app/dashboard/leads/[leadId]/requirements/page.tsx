@@ -65,8 +65,11 @@ export default async function LeadRequirementsPage({ params }: { params: { leadI
 
         <div className="mt-8 space-y-6">
             <RequirementSection title="Información de Contacto" icon={<User className="h-6 w-6 text-primary" />}>
+                <RequirementItem label="Tipo de Cliente" value={requirements.contactInfo.clientType === 'empresa' ? 'Empresa' : 'Particular'} />
                 <RequirementItem label="Nombre" value={requirements.contactInfo.name} />
-                <RequirementItem label="Empresa" value={requirements.contactInfo.company} />
+                {requirements.contactInfo.clientType === 'empresa' && (
+                    <RequirementItem label="Empresa" value={requirements.contactInfo.company} />
+                )}
                 <RequirementItem label="Email" value={requirements.contactInfo.email} />
                 <RequirementItem label="Teléfono" value={requirements.contactInfo.phone} />
             </RequirementSection>
@@ -77,7 +80,7 @@ export default async function LeadRequirementsPage({ params }: { params: { leadI
                 <RequirementItem label="Público Objetivo" value={requirements.projectInfo.targetAudience} />
                 <RequirementItem label="Objetivos Principales" value={requirements.projectInfo.mainGoals} isList />
                 <RequirementItem label="Competidores" value={requirements.projectInfo.competitors} />
-                <RequirementItem label="Presupuesto" value={requirements.projectInfo.budget} />
+                <RequirementItem label="País" value={requirements.projectInfo.country || 'No especificado'} />
             </RequirementSection>
 
             <RequirementSection title="Alcance y Funcionalidades" icon={<ListChecks className="h-6 w-6 text-primary" />}>

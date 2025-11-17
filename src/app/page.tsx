@@ -75,14 +75,13 @@ export default function LoginPage() {
                   type="email"
                   placeholder="admin@example.com"
                   required
-                  defaultValue="admin@example.com"
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Contraseña</Label>
                 </div>
-                <Input id="password" name="password" type="password" required defaultValue="password123" />
+                <Input id="password" name="password" type="password" required />
               </div>
               <LoginButton />
                {state?.error && (

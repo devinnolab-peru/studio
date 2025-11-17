@@ -42,5 +42,233 @@
       "maintenance": "ss"
     },
     "attachments": []
+  },
+  {
+    "leadId": "lead-1763401452126",
+    "submittedAt": "2025-11-17T18:10:23.141Z",
+    "contactInfo": {
+      "name": "Sergio Sanguinetti",
+      "company": "sancotti",
+      "email": "ssanguinetti14@gmail.com",
+      "phone": "915097679"
+    },
+    "projectInfo": {
+      "projectName": "SSSSSS",
+      "projectIdea": "SSSS",
+      "targetAudience": "SSSSSSSSSSSSSS",
+      "mainGoals": [
+        "S",
+        "SSSSSSS",
+        "SSSSSSS"
+      ],
+      "competitors": "SSSSSS",
+      "budget": "30k-50k"
+    },
+    "scopeAndFeatures": {
+      "platforms": [],
+      "commonFeatures": [
+        "Dashboard de Analíticas",
+        "Gestión de Roles y Permisos"
+      ],
+      "otherFeatures": [
+        "SSS",
+        "SSS"
+      ]
+    },
+    "designAndUX": {
+      "hasBrandIdentity": "no",
+      "brandFiles": [],
+      "designInspirations": [
+        "SSS",
+        "SS"
+      ],
+      "lookAndFeel": ""
+    },
+    "contentAndStrategy": {
+      "contentCreation": "SS",
+      "marketingPlan": "S",
+      "maintenance": "SSS"
+    },
+    "attachments": []
+  },
+  {
+    "leadId": "lead-1763403996101",
+    "submittedAt": "2025-11-17T18:53:19.401Z",
+    "contactInfo": {
+      "name": "",
+      "company": "",
+      "email": "",
+      "phone": "",
+      "clientType": "particular"
+    },
+    "projectInfo": {
+      "projectName": "",
+      "projectIdea": "",
+      "targetAudience": "",
+      "mainGoals": [
+        "",
+        "",
+        ""
+      ],
+      "competitors": "",
+      "country": ""
+    },
+    "scopeAndFeatures": {
+      "platforms": [],
+      "commonFeatures": [],
+      "otherFeatures": []
+    },
+    "designAndUX": {
+      "hasBrandIdentity": "no",
+      "brandFiles": [],
+      "designInspirations": [
+        "",
+        ""
+      ],
+      "lookAndFeel": ""
+    },
+    "contentAndStrategy": {
+      "contentCreation": "",
+      "marketingPlan": "",
+      "maintenance": ""
+    },
+    "attachments": []
+  },
+  {
+    "leadId": "lead-1763403996101",
+    "submittedAt": "2025-11-17T18:57:47.582Z",
+    "contactInfo": {
+      "name": "",
+      "company": "",
+      "email": "",
+      "phone": "",
+      "clientType": "particular"
+    },
+    "projectInfo": {
+      "projectName": "",
+      "projectIdea": "",
+      "targetAudience": "",
+      "mainGoals": [
+        "",
+        "",
+        ""
+      ],
+      "competitors": "",
+      "country": ""
+    },
+    "scopeAndFeatures": {
+      "platforms": [],
+      "commonFeatures": [],
+      "otherFeatures": []
+    },
+    "designAndUX": {
+      "hasBrandIdentity": "no",
+      "brandFiles": [],
+      "designInspirations": [
+        "",
+        ""
+      ],
+      "lookAndFeel": ""
+    },
+    "contentAndStrategy": {
+      "contentCreation": "",
+      "marketingPlan": "",
+      "maintenance": ""
+    },
+    "attachments": []
+  },
+  {
+    "leadId": "lead-1763403996101",
+    "submittedAt": "2025-11-17T19:12:49.309Z",
+    "contactInfo": {
+      "name": "ssss",
+      "company": "",
+      "email": "aaa",
+      "phone": "aaa",
+      "clientType": "particular"
+    },
+    "projectInfo": {
+      "projectName": "aaaaaaaa",
+      "projectIdea": "a",
+      "targetAudience": "aaa",
+      "mainGoals": [
+        "aaaaa",
+        "aaaaaaa",
+        "aaaaa"
+      ],
+      "competitors": "aa",
+      "country": "peru"
+    },
+    "scopeAndFeatures": {
+      "platforms": [],
+      "commonFeatures": [
+        "Exportación de Reportes (PDF/Excel)"
+      ],
+      "otherFeatures": []
+    },
+    "designAndUX": {
+      "hasBrandIdentity": "no",
+      "brandFiles": [],
+      "designInspirations": [
+        "aaaaaaa",
+        ""
+      ],
+      "lookAndFeel": "aaa"
+    },
+    "contentAndStrategy": {
+      "contentCreation": "",
+      "marketingPlan": "aa",
+      "maintenance": "aaa"
+    },
+    "attachments": []
+  },
+  {
+    "leadId": "lead-1763407538971",
+    "submittedAt": "2025-11-17T19:26:08.594Z",
+    "contactInfo": {
+      "name": "Sergio Sanguinetti",
+      "company": "",
+      "email": "admin@goodpro.pe",
+      "phone": "915097679",
+      "clientType": "particular"
+    },
+    "projectInfo": {
+      "projectName": "ssss",
+      "projectIdea": "sss",
+      "targetAudience": "sss",
+      "mainGoals": [
+        "ss",
+        "s",
+        "s"
+      ],
+      "competitors": "sss",
+      "country": "ssss"
+    },
+    "scopeAndFeatures": {
+      "platforms": [],
+      "commonFeatures": [
+        "Sistema de Archivos",
+        "Reportes y Analíticas",
+        "Pagos en línea",
+        "Base de Conocimientos/FAQ",
+        "Calendario y Agendamiento"
+      ],
+      "otherFeatures": []
+    },
+    "designAndUX": {
+      "hasBrandIdentity": "no",
+      "brandFiles": [],
+      "designInspirations": [
+        "ss",
+        "ss"
+      ],
+      "lookAndFeel": "sss"
+    },
+    "contentAndStrategy": {
+      "contentCreation": "",
+      "marketingPlan": "ss",
+      "maintenance": "ss"
+    },
+    "attachments": []
   }
 ]

@@ -9,7 +9,7 @@ import TimelineView from './timeline-view';
 import ChangeRequestsList from './change-requests-list';
 import { useToast } from '@/hooks/use-toast';
 import ProjectDocumentsCard from './project-documents-card';
-import { addModule, addModulesFromAI, editModule, deleteModule, updateChangeRequestStatus, updateModuleParts, addRequirement, editRequirement, onDeleteRequirement, addDocument } from '@/lib/actions';
+import { addModule, addModulesFromAI, editModule, deleteModule, updateChangeRequestStatus, updateModuleParts, addRequirement, editRequirement, onDeleteRequirement, addDocument, approveModule } from '@/lib/actions';
 
 export default function ProjectDetailsClientPage({ initialProject }: { initialProject: Project }) {
   const { toast } = useToast();
@@ -130,6 +130,20 @@ export default function ProjectDetailsClientPage({ initialProject }: { initialPr
      }
   };
 
+  const handleApproveModule = async (moduleId: string) => {
+    const result = await approveModule(projectId, moduleId);
+    if (result.success && result.updatedProject) {
+      toast({
+        title: 'Módulo Aprobado',
+        description: 'El módulo ha sido marcado como completado.',
+      });
+      // Recargar la página para actualizar el estado y la barra de progreso
+      window.location.reload();
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.error });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <ProjectHeader project={initialProject} />
@@ -143,6 +157,7 @@ export default function ProjectDetailsClientPage({ initialProject }: { initialPr
             onEditModule={handleEditModule}
             onDeleteModule={handleDeleteModule}
             onModulePartsUpdate={handleModulePartsUpdate}
+            onApproveModule={handleApproveModule}
            />
           <TimelineView events={initialProject.timelineEvents} />
         </div>

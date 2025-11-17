@@ -1,6 +1,10 @@
 [
   {
-    "email": "admin@example.com",
-    "password": "password123"
+    "id": "user-1",
+    "email": "ssanguinetti14@gmail.com",
+    "name": "Administrador",
+    "password": "admin123",
+    "active": true,
+    "createdAt": "2024-01-01T00:00:00.000Z"
   }
 ]

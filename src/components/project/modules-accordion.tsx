@@ -39,9 +39,10 @@ interface ModulesAccordionProps {
   isClientView?: boolean;
   onClientApproveModule?: (moduleId: string) => Promise<void>;
   onClientApprovePart?: (moduleId: string, partId: string) => Promise<void>;
+  onApproveModule?: (moduleId: string) => Promise<void>;
 }
 
-export default function ModulesAccordion({ projectId, modules, onAddModule, onEditModule, onDeleteModule, onModulePartsUpdate, isClientView = false, onClientApproveModule, onClientApprovePart }: ModulesAccordionProps) {
+export default function ModulesAccordion({ projectId, modules, onAddModule, onEditModule, onDeleteModule, onModulePartsUpdate, isClientView = false, onClientApproveModule, onClientApprovePart, onApproveModule }: ModulesAccordionProps) {
   const [isAddModuleDialogOpen, setIsAddModuleDialogOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -55,10 +56,15 @@ export default function ModulesAccordion({ projectId, modules, onAddModule, onEd
   }
   
   const handleApprove = async (moduleId: string) => {
-    if (!onClientApproveModule) return;
-    setIsApproving(moduleId);
-    await onClientApproveModule(moduleId);
-    setIsApproving(null);
+    if (isClientView && onClientApproveModule) {
+      setIsApproving(moduleId);
+      await onClientApproveModule(moduleId);
+      setIsApproving(null);
+    } else if (!isClientView && onApproveModule) {
+      setIsApproving(moduleId);
+      await onApproveModule(moduleId);
+      setIsApproving(null);
+    }
   }
 
   return (
@@ -95,6 +101,17 @@ export default function ModulesAccordion({ projectId, modules, onAddModule, onEd
                                     <Button variant="outline" size="sm" onClick={() => setEditingModule(module)}>
                                         <Edit className="mr-2 h-3 w-3" /> Editar
                                     </Button>
+                                    {onApproveModule && module.status !== 'Completado' && (
+                                        <Button 
+                                            size="sm" 
+                                            className="bg-green-600 hover:bg-green-700 text-white" 
+                                            onClick={() => handleApprove(module.id)} 
+                                            disabled={isApproving === module.id}
+                                        >
+                                            {isApproving === module.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                            Aprobar Módulo
+                                        </Button>
+                                    )}
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                         <Button variant="destructive" size="sm">

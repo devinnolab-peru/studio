@@ -309,8 +309,160 @@
     "status": "Planificación",
     "id": "proj-1755565952107",
     "shareableLinkId": "client-link-1755565952107",
-    "modules": [],
+    "modules": [
+      {
+        "name": "Análisis de requerimientos",
+        "description": "Recopilar y documentar los requisitos del proyecto.",
+        "deadline": "2024-03-15T00:00:00.000Z",
+        "owner": "Analista de negocios",
+        "estimatedHours": 40,
+        "id": "mod-1763403372335-0.4425529643266468",
+        "status": "Completado",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Diseño de la base de datos",
+        "description": "Diseñar el esquema de la base de datos para la aplicación.",
+        "deadline": "2024-03-22T00:00:00.000Z",
+        "owner": "Arquitecto de la base de datos",
+        "estimatedHours": 30,
+        "id": "mod-1763403372335-0.9252372192930425",
+        "status": "Completado",
+        "parts": [
+          {
+            "id": "part-1763403381190",
+            "name": "WW",
+            "status": "Completado"
+          },
+          {
+            "id": "part-1763403382505",
+            "name": "WW",
+            "status": "Completado"
+          }
+        ],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Desarrollo del backend",
+        "description": "Implementar la lógica del servidor y las API.",
+        "deadline": "2024-04-12T00:00:00.000Z",
+        "owner": "Equipo de Backend",
+        "estimatedHours": 120,
+        "id": "mod-1763403372335-0.6612985380305403",
+        "status": "Pendiente",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Desarrollo del frontend",
+        "description": "Crear la interfaz de usuario para la aplicación.",
+        "deadline": "2024-04-26T00:00:00.000Z",
+        "owner": "Equipo de Frontend",
+        "estimatedHours": 100,
+        "id": "mod-1763403372335-0.15552823351405376",
+        "status": "Pendiente",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Pruebas",
+        "description": "Realizar pruebas unitarias, pruebas de integración y pruebas del sistema.",
+        "deadline": "2024-05-10T00:00:00.000Z",
+        "owner": "Equipo de QA",
+        "estimatedHours": 80,
+        "id": "mod-1763403372335-0.3127287470648832",
+        "status": "Pendiente",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Implementación",
+        "description": "Implementar la aplicación en el entorno de producción.",
+        "deadline": "2024-05-17T00:00:00.000Z",
+        "owner": "Equipo de Operaciones",
+        "estimatedHours": 20,
+        "id": "mod-1763403372335-0.8920065851507362",
+        "status": "Pendiente",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      },
+      {
+        "name": "Documentación",
+        "description": "Crear documentación técnica y guías de usuario.",
+        "deadline": "2024-05-24T00:00:00.000Z",
+        "owner": "Redactor técnico",
+        "estimatedHours": 40,
+        "id": "mod-1763403372335-0.6175453859675091",
+        "status": "Pendiente",
+        "parts": [],
+        "stages": [],
+        "requirements": [],
+        "reviews": [],
+        "deliverables": [],
+        "documents": []
+      }
+    ],
     "timelineEvents": [
+      {
+        "eventDescription": "El administrador ha aprobado el módulo: \"Diseño de la base de datos\"",
+        "eventDate": "2025-11-17T18:25:14.183Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "El administrador ha aprobado el módulo: \"Análisis de requerimientos\"",
+        "eventDate": "2025-11-17T18:25:10.280Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "Tareas actualizadas para el módulo \"Diseño de la base de datos\"",
+        "eventDate": "2025-11-17T18:23:30.170Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "Tareas actualizadas para el módulo \"Diseño de la base de datos\"",
+        "eventDate": "2025-11-17T18:23:29.471Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "Tareas actualizadas para el módulo \"Diseño de la base de datos\"",
+        "eventDate": "2025-11-17T18:16:22.990Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "Tareas actualizadas para el módulo \"Diseño de la base de datos\"",
+        "eventDate": "2025-11-17T18:16:21.847Z",
+        "actor": "admin"
+      },
+      {
+        "eventDescription": "7 módulos generados por IA",
+        "eventDate": "2025-11-17T18:16:12.335Z",
+        "actor": "sistema"
+      },
       {
         "actor": "sistema",
         "eventDate": "2025-08-19T01:12:32.107Z",

@@ -1,5 +1,32 @@
 [
   {
+    "id": "lead-1763407538971",
+    "name": "Sergio Sanguinetti",
+    "email": "admin@goodpro.pe",
+    "company": "",
+    "status": "Propuesta Enviada",
+    "createdAt": "2025-11-17T19:25:38.971Z",
+    "formLink": "/leads/lead-1763407538971/form"
+  },
+  {
+    "id": "lead-1763403996101",
+    "name": "ssss",
+    "email": "aaa",
+    "company": "",
+    "status": "Propuesta Enviada",
+    "createdAt": "2025-11-17T18:26:36.101Z",
+    "formLink": "/leads/lead-1763403996101/form"
+  },
+  {
+    "id": "lead-1763401452126",
+    "name": "Sergio Sanguinetti",
+    "email": "ssanguinetti14@gmail.com",
+    "company": "sancotti",
+    "status": "Propuesta Enviada",
+    "createdAt": "2025-11-17T17:44:12.126Z",
+    "formLink": "/leads/lead-1763401452126/form"
+  },
+  {
     "id": "lead-1755562935650",
     "name": "ss",
     "email": "ss",

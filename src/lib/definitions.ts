@@ -93,6 +93,7 @@ export interface ClientRequirements {
     company: string;
     email: string;
     phone: string;
+    clientType: 'empresa' | 'particular';
   };
   projectInfo: {
     projectName: string;
@@ -100,7 +101,7 @@ export interface ClientRequirements {
     targetAudience: string;
     mainGoals: string[];
     competitors: string;
-    budget: string;
+    country: string;
   };
   scopeAndFeatures: {
     platforms: string[];
@@ -123,6 +124,10 @@ export interface ClientRequirements {
 }
 
 export interface User {
+  id: string;
   email: string;
-  password?: string;
+  password: string;
+  name: string;
+  active: boolean;
+  createdAt: Date;
 }
