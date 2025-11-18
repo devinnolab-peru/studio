@@ -1,10 +1,10 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Lead, ClientRequirements } from '@/lib/definitions';
 import PageHeader from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Mail, Copy, Eye, Trash2 } from 'lucide-react';
+import { PlusCircle, Mail, Copy, Eye, Trash2, RefreshCw } from 'lucide-react';
 import FileText from '@/components/shared/FileText';
 import {
   Table,
@@ -45,8 +45,49 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [requirements, setRequirements] = useState<ClientRequirements[]>(initialRequirements);
   const [isCreateLeadDialogOpen, setIsCreateLeadDialogOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Sincronizar el estado con los props cuando cambien (después de refresh)
+  useEffect(() => {
+    setLeads(initialLeads);
+    setRequirements(initialRequirements);
+  }, [initialLeads, initialRequirements]);
+
+  // Refrescar datos cuando la ventana recupera el foco
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refrescar los datos cuando la ventana recupera el foco
+      router.refresh();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [router]);
+
+  // Función para refrescar manualmente
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      router.refresh();
+      // Esperar un momento para que se actualicen los datos
+      setTimeout(() => {
+        setIsRefreshing(false);
+        toast({
+          title: 'Datos actualizados',
+          description: 'La lista de leads se ha actualizado.',
+        });
+      }, 500);
+    } catch (error) {
+      setIsRefreshing(false);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudieron actualizar los datos.',
+      });
+    }
+  };
 
   const handleCreateLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'formLink' | 'status'>) => {
     const result = await createLead(leadData);
@@ -106,10 +147,20 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
         title="Leads"
         description="Gestiona tus clientes potenciales y sus requerimientos."
       >
-        <Button onClick={() => setIsCreateLeadDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Crear Nuevo Lead
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+          <Button onClick={() => setIsCreateLeadDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Crear Nuevo Lead
+          </Button>
+        </div>
       </PageHeader>
 
       <Card className="mt-8">
