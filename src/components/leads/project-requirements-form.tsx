@@ -249,7 +249,10 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                     title: "Requerimientos Enviados",
                     description: "Gracias por completar el formulario. Nos pondremos en contacto contigo pronto.",
                 });
-                onSubmitSuccess();
+                // Llamar a onSubmitSuccess de forma asíncrona para evitar recargas
+                setTimeout(() => {
+                    onSubmitSuccess();
+                }, 0);
             } else {
                 toast({
                     variant: 'destructive',
