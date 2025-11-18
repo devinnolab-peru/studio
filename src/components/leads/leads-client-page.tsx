@@ -152,8 +152,11 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
                         <Copy className="h-4 w-4 mr-1" />
                         Copiar
                       </Button>
-                      <Link href={lead.formLink} target="_blank">
-                        <Button variant="ghost" size="sm" title="Ver formulario">
+                      <Link 
+                        href={hasSubmittedRequirements(lead.id) ? `/leads/${lead.id}/view` : lead.formLink} 
+                        target="_blank"
+                      >
+                        <Button variant="ghost" size="sm" title="Ver formulario o requerimientos">
                           <Eye className="h-4 w-4 mr-1" />
                           Ver
                         </Button>
@@ -234,12 +237,13 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
                     <Button variant="ghost" size="icon" title="Copiar enlace del formulario" onClick={() => copyToClipboard(lead.formLink)}>
                         <Copy className="h-4 w-4" />
                     </Button>
-                     <Link href={lead.formLink} passHref legacyBehavior>
-                      <a target="_blank">
-                        <Button variant="ghost" size="icon" title={"Ver formulario"}>
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                      </a>
+                    <Link 
+                      href={hasSubmittedRequirements(lead.id) ? `/leads/${lead.id}/view` : lead.formLink} 
+                      target="_blank"
+                    >
+                      <Button variant="ghost" size="icon" title="Ver formulario o requerimientos">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </Link>
                   </TableCell>
                   <TableCell>
