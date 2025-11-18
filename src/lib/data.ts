@@ -12,15 +12,25 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getLeads(): Promise<Lead[]> {
-  const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
-  const leads = await leadsCollection.find({}).toArray();
-  return leads.map(doc => convertObjectIdToString(doc));
+  try {
+    const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+    const leads = await leadsCollection.find({}).toArray();
+    return leads.map(doc => convertObjectIdToString(doc));
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return [];
+  }
 }
 
 export async function getClientRequirements(): Promise<ClientRequirements[]> {
-  const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
-  const requirements = await requirementsCollection.find({}).toArray();
-  return requirements.map(doc => convertObjectIdToString(doc));
+  try {
+    const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
+    const requirements = await requirementsCollection.find({}).toArray();
+    return requirements.map(doc => convertObjectIdToString(doc));
+  } catch (error) {
+    console.error('Error fetching client requirements:', error);
+    return [];
+  }
 }
 
 export async function getProjectById(id: string, byShareableLink: boolean = false): Promise<Project[] | undefined> {

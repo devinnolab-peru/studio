@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import ProjectRequirementsForm from '@/components/leads/project-requirements-form';
+import Link from 'next/link';
 
 const PROJECT_TYPES = [
   {
@@ -65,11 +66,18 @@ export default function LeadFormClient({ leadId }: { leadId: string }) {
                 Hemos recibido tus requerimientos.
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
+            <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
                 Revisaremos la información que enviaste y nos pondremos en
                 contacto contigo muy pronto para discutir los siguientes pasos.
               </p>
+              <div className="pt-4">
+                <Link href={`/leads/${leadId}/view`}>
+                  <Button>
+                    Ver mis requerimientos
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

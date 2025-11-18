@@ -120,6 +120,12 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {leads.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No hay leads disponibles. Crea tu primer lead para comenzar.</p>
+            </div>
+          ) : (
+            <>
           {/* Mobile Cards View */}
           <div className="block sm:hidden space-y-4">
             {leads.map((lead) => (
@@ -280,6 +286,8 @@ export default function LeadsClientPage({ initialLeads, initialRequirements }: {
             </TableBody>
           </Table>
           </div>
+            </>
+          )}
         </CardContent>
       </Card>
        <CreateLeadDialog
