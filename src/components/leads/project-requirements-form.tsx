@@ -291,7 +291,7 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
             </p>
         </div>
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }}>
             <Card>
                 {currentStep === 1 && (
                     <>
@@ -527,7 +527,7 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                          </CardContent>
                         <CardFooter className="justify-between">
                             <Button variant="outline" onClick={prevStep}>Anterior</Button>
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="button" onClick={handleSubmit} disabled={isLoading}>
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -783,9 +783,9 @@ export async function submitLeadForm(leadId: string, formData: any) {
         console.error('Error al enviar email de confirmación al cliente:', error);
     }
 
-    // Solo revalidar la ruta del dashboard donde se muestran los leads
-    // No revalidar la ruta actual del formulario para evitar 404 en Vercel
-    revalidatePath('/dashboard/leads');
+    // No revalidar rutas aquí para evitar 404 en Vercel después del submit
+    // La revalidación se hará cuando se acceda al dashboard
+    // Revalidar rutas después de server actions puede causar navegación no deseada en Vercel
     
     return { success: true };
 }
