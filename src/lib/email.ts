@@ -157,7 +157,7 @@ function formatConfirmationEmailForClient(formData: ClientRequirements): string 
           <p>¡Esperamos trabajar contigo!</p>
           
           <p>Saludos,<br>
-          <strong>El equipo de ProPlanner</strong></p>
+          <strong>El equipo de Devinnolab</strong></p>
         </div>
         <div class="footer">
           <p>Este es un email automático de confirmación. Por favor, no respondas a este mensaje.</p>
@@ -187,7 +187,7 @@ export async function sendClientConfirmationEmail(formData: ClientRequirements):
     const transporter = createTransporter();
     
     const mailOptions = {
-      from: `"ProPlanner" <${SMTP_USER}>`,
+      from: `"Devinnolab" <${SMTP_USER}>`,
       to: formData.contactInfo.email,
       subject: `Confirmación de Recepción - ${formData.projectInfo.projectName || 'Tu Proyecto'}`,
       html: formatConfirmationEmailForClient(formData),
@@ -218,7 +218,7 @@ export async function sendLeadFormNotification(formData: ClientRequirements, lea
     const transporter = createTransporter();
     
     const mailOptions = {
-      from: `"ProPlanner" <${SMTP_USER}>`,
+      from: `"Devinnolab" <${SMTP_USER}>`,
       to: NOTIFICATION_EMAIL,
       subject: `Nuevo Formulario de Requerimientos - ${formData.projectInfo.projectName || 'Sin nombre'}`,
       html: formatFormDataForEmail(formData),
