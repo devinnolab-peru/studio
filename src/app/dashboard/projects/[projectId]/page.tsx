@@ -3,6 +3,9 @@ import ProjectDetailsClientPage from '@/components/project/project-details-clien
 import { getProjectById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 
+// Forzar renderizado dinámico para evitar 404 al recargar en Vercel
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectDetailsPage({
   params,
 }: {

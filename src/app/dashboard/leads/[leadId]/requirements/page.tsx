@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Link as LinkIcon, User, Building, Mail, Phone, List, ListChecks, Palette, FileText, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 
+// Forzar renderizado dinámico para evitar 404 al recargar en Vercel
+export const dynamic = 'force-dynamic';
+
 const RequirementSection = ({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) => (
     <Card>
         <CardHeader className="flex flex-row items-center gap-3 space-y-0">
