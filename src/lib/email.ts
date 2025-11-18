@@ -97,13 +97,7 @@ function formatFormDataForEmail(formData: ClientRequirements): string {
       <li><strong>Plan de Marketing:</strong> ${formData.contentAndStrategy.marketingPlan || 'No especificado'}</li>
       <li><strong>Mantenimiento:</strong> ${formData.contentAndStrategy.maintenance || 'No especificado'}</li>
     </ul>
-    
-    ${formData.attachments && formData.attachments.length > 0 ? `
-      <h3>Archivos Adjuntos</h3>
-      <ul>
-        ${formData.attachments.map(file => `<li><a href="${file.url}">${file.name}</a></li>`).join('')}
-      </ul>
-    ` : ''}
+ 
     
     <hr>
     <p><small>Este email fue generado automáticamente cuando se completó el formulario de requerimientos.</small></p>

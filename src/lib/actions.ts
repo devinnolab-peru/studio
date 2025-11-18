@@ -711,14 +711,15 @@ export async function createLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'form
         return { error: 'El nombre y el correo electrónico son obligatorios.' };
     }
     const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
+    const leadTimestamp = Date.now();
     const newLead: Lead = {
-      id: `lead-${Date.now()}`,
+      id: `lead-${leadTimestamp}`,
       name: leadData.name,
       email: leadData.email,
       company: leadData.company,
       status: 'Nuevo',
       createdAt: new Date(),
-      formLink: `/leads/lead-${Date.now()}/form`,
+      formLink: `/leads/lead-${leadTimestamp}/form`,
     };
     await leadsCollection.insertOne(newLead);
     revalidatePath('/dashboard/leads');
@@ -730,10 +731,30 @@ export async function submitLeadForm(leadId: string, formData: any) {
     const requirementsCollection = await getCollection<ClientRequirements & { _id?: ObjectId }>('clientRequirements');
 
     let leadDoc;
+    // Intentar buscar por _id (ObjectId)
     try {
         leadDoc = await leadsCollection.findOne({ _id: convertStringToObjectId(leadId) });
     } catch {
+        // Si no es un ObjectId válido, continuar con otras búsquedas
+    }
+    
+    // Si no se encontró, intentar buscar por id
+    if (!leadDoc) {
         leadDoc = await leadsCollection.findOne({ id: leadId });
+    }
+    
+    // Si aún no se encuentra, intentar buscar por formLink (útil para leads antiguos con id sobrescrito)
+    if (!leadDoc) {
+        const formLink = `/leads/${leadId}/form`;
+        leadDoc = await leadsCollection.findOne({ formLink });
+        // Si encontramos el lead por formLink pero el id está sobrescrito, corregirlo
+        if (leadDoc && leadDoc.id !== leadId) {
+            await leadsCollection.updateOne(
+                { _id: leadDoc._id },
+                { $set: { id: leadId } }
+            );
+            leadDoc.id = leadId;
+        }
     }
 
     if (!leadDoc) {
@@ -741,11 +762,7 @@ export async function submitLeadForm(leadId: string, formData: any) {
     }
 
     const lead = convertObjectIdToString(leadDoc);
-    lead.status = 'Propuesta Enviada';
-    lead.name = formData.contactInfo.name;
-    lead.company = formData.contactInfo.company;
-    lead.email = formData.contactInfo.email;
-
+    
     // Verificar si ya existe un requirement para este lead
     const existingRequirement = await requirementsCollection.findOne({ leadId });
     
@@ -755,16 +772,24 @@ export async function submitLeadForm(leadId: string, formData: any) {
         ...formData,
     };
 
+    // Actualizar lead - solo actualizar campos específicos, no el id ni formLink
+    const leadUpdate: Partial<Lead> = {
+        status: 'Propuesta Enviada',
+        name: formData.contactInfo.name,
+        company: formData.contactInfo.company,
+        email: formData.contactInfo.email,
+    };
+
     // Actualizar lead
     try {
         await leadsCollection.updateOne(
             { _id: convertStringToObjectId(leadId) },
-            { $set: lead }
+            { $set: leadUpdate }
         );
     } catch {
         await leadsCollection.updateOne(
             { id: leadId },
-            { $set: lead }
+            { $set: leadUpdate }
         );
     }
 

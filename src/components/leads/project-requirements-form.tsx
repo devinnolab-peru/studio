@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,7 +135,11 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
     const [formData, setFormData] = useState({
         contactInfo: initialData?.contactInfo || { name: '', company: '', email: '', phone: '', clientType: 'particular' as 'empresa' | 'particular' },
         projectInfo: initialData?.projectInfo ? { ...initialData.projectInfo, mainGoals: paddedMainGoals } : { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', country: '' },
-        scopeAndFeatures: initialData?.scopeAndFeatures || { platforms: [] as string[], commonFeatures: [] as string[], otherFeatures: [] as string[] },
+                scopeAndFeatures: {
+                    platforms: Array.isArray(initialData?.scopeAndFeatures?.platforms) ? initialData.scopeAndFeatures.platforms : [],
+                    commonFeatures: Array.isArray(initialData?.scopeAndFeatures?.commonFeatures) ? initialData.scopeAndFeatures.commonFeatures : [],
+                    otherFeatures: Array.isArray(initialData?.scopeAndFeatures?.otherFeatures) ? initialData.scopeAndFeatures.otherFeatures : [],
+                },
         designAndUX: initialData?.designAndUX ? { ...initialData.designAndUX, designInspirations: paddedDesignInspirations } : { hasBrandIdentity: 'no', brandFiles: [], designInspirations: ['', ''], lookAndFeel: '' },
         contentAndStrategy: initialData?.contentAndStrategy || { contentCreation: '', marketingPlan: '', maintenance: '' },
         attachments: [] as File[],
@@ -144,6 +148,34 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
     const [otherFeatureInput, setOtherFeatureInput] = useState('');
     
     const relevantFeatures = COMMON_FEATURES[projectType] || COMMON_FEATURES['otro'];
+
+    // Actualizar el estado cuando initialData cambie
+    useEffect(() => {
+        if (initialData) {
+            const updatedMainGoals = [...(initialData.projectInfo?.mainGoals || [])];
+            while (updatedMainGoals.length < 3) {
+                updatedMainGoals.push('');
+            }
+            
+            const updatedDesignInspirations = [...(initialData.designAndUX?.designInspirations || [])];
+            while (updatedDesignInspirations.length < 2) {
+                updatedDesignInspirations.push('');
+            }
+            
+            setFormData({
+                contactInfo: initialData.contactInfo || { name: '', company: '', email: '', phone: '', clientType: 'particular' as 'empresa' | 'particular' },
+                projectInfo: initialData.projectInfo ? { ...initialData.projectInfo, mainGoals: updatedMainGoals } : { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', country: '' },
+                scopeAndFeatures: {
+                    platforms: Array.isArray(initialData.scopeAndFeatures?.platforms) ? initialData.scopeAndFeatures.platforms : [],
+                    commonFeatures: Array.isArray(initialData.scopeAndFeatures?.commonFeatures) ? initialData.scopeAndFeatures.commonFeatures : [],
+                    otherFeatures: Array.isArray(initialData.scopeAndFeatures?.otherFeatures) ? initialData.scopeAndFeatures.otherFeatures : [],
+                },
+                designAndUX: initialData.designAndUX ? { ...initialData.designAndUX, designInspirations: updatedDesignInspirations } : { hasBrandIdentity: 'no', brandFiles: [], designInspirations: ['', ''], lookAndFeel: '' },
+                contentAndStrategy: initialData.contentAndStrategy || { contentCreation: '', marketingPlan: '', maintenance: '' },
+                attachments: [],
+            });
+        }
+    }, [initialData]);
 
     const handleChange = (section: string, field: string, value: any) => {
         setFormData(prev => ({

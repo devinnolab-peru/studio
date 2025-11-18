@@ -54,12 +54,41 @@ export async function getProjectById(id: string, byShareableLink: boolean = fals
 export async function getLeadById(leadId: string): Promise<Lead | undefined> {
     const leadsCollection = await getCollection<Lead & { _id?: ObjectId }>('leads');
     let leadDoc;
+    
+    // Intentar buscar por _id (ObjectId)
     try {
         leadDoc = await leadsCollection.findOne({ _id: convertStringToObjectId(leadId) });
+        if (leadDoc) {
+            return convertObjectIdToString(leadDoc);
+        }
     } catch {
-        leadDoc = await leadsCollection.findOne({ id: leadId });
+        // Si no es un ObjectId válido, continuar con otras búsquedas
     }
-    return leadDoc ? convertObjectIdToString(leadDoc) : undefined;
+    
+    // Intentar buscar por id
+    leadDoc = await leadsCollection.findOne({ id: leadId });
+    if (leadDoc) {
+        return convertObjectIdToString(leadDoc);
+    }
+    
+    // Si no se encuentra, intentar buscar por formLink (útil para leads antiguos con id sobrescrito)
+    const formLink = `/leads/${leadId}/form`;
+    leadDoc = await leadsCollection.findOne({ formLink });
+    if (leadDoc) {
+        // Si encontramos el lead por formLink pero el id está sobrescrito, corregirlo
+        const lead = convertObjectIdToString(leadDoc);
+        // Si el id no coincide con el leadId del formLink, actualizar el id
+        if (lead.id !== leadId && lead.formLink === formLink) {
+            await leadsCollection.updateOne(
+                { _id: leadDoc._id },
+                { $set: { id: leadId } }
+            );
+            lead.id = leadId;
+        }
+        return lead;
+    }
+    
+    return undefined;
 }
 
 export async function getRequirementsByLeadId(leadId: string): Promise<ClientRequirements | undefined> {

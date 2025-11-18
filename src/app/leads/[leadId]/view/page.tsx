@@ -121,13 +121,13 @@ export default async function LeadViewPage({ params }: { params: { leadId: strin
                  <RequirementItem label="Mantenimiento" value={requirements.contentAndStrategy.maintenance} />
             </RequirementSection>
 
-            <RequirementSection title="Archivos Adjuntos" icon={<FileText className="h-6 w-6 text-primary" />}>
+            {/* <RequirementSection title="Archivos Adjuntos" icon={<FileText className="h-6 w-6 text-primary" />}>
                 {requirements.attachments && requirements.attachments.length > 0 ? (
                     <p>Archivos adjuntos aquí.</p>
                 ) : (
                     <p className="text-muted-foreground">No se adjuntaron archivos.</p>
                 )}
-            </RequirementSection>
+            </RequirementSection> */}
         </div>
     </div>
   );

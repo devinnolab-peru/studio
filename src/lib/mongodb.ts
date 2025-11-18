@@ -40,9 +40,10 @@ export async function getCollection<T>(collectionName: string): Promise<Collecti
 // Helper functions para convertir entre ObjectId y string id
 export function convertObjectIdToString<T extends { _id?: ObjectId; id?: string }>(doc: T): Omit<T, '_id'> & { id: string } {
   const { _id, ...rest } = doc as any;
+  // Priorizar el id existente si existe, de lo contrario usar el _id convertido
   return {
     ...rest,
-    id: _id ? _id.toString() : (doc.id || ''),
+    id: doc.id || (_id ? _id.toString() : ''),
   } as Omit<T, '_id'> & { id: string };
 }
 
