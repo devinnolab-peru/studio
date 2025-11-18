@@ -13,12 +13,14 @@ import { FolderKanban, Send, Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { submitLeadForm } from '@/lib/actions';
+import type { ClientRequirements } from '@/lib/definitions';
 
 interface ProjectRequirementsFormProps {
     leadId: string;
     projectType: string;
     onBack: () => void;
     onSubmitSuccess: () => void;
+    initialData?: ClientRequirements;
 }
 
 const COMMON_FEATURES: { [key: string]: string[] } = {
@@ -111,17 +113,31 @@ const COMMON_FEATURES: { [key: string]: string[] } = {
 
 const PLATFORMS = ["Aplicación Web", "Aplicación iOS", "Aplicación Android", "Otro"];
 
-export default function ProjectRequirementsForm({ leadId, projectType, onBack, onSubmitSuccess }: ProjectRequirementsFormProps) {
+export default function ProjectRequirementsForm({ leadId, projectType, onBack, onSubmitSuccess, initialData }: ProjectRequirementsFormProps) {
     const { toast } = useToast();
     
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    // Asegurar que mainGoals tenga al menos 3 elementos
+    const initialMainGoals = initialData?.projectInfo?.mainGoals || [];
+    const paddedMainGoals = [...initialMainGoals];
+    while (paddedMainGoals.length < 3) {
+        paddedMainGoals.push('');
+    }
+    
+    // Asegurar que designInspirations tenga al menos 2 elementos
+    const initialDesignInspirations = initialData?.designAndUX?.designInspirations || [];
+    const paddedDesignInspirations = [...initialDesignInspirations];
+    while (paddedDesignInspirations.length < 2) {
+        paddedDesignInspirations.push('');
+    }
+    
     const [formData, setFormData] = useState({
-        contactInfo: { name: '', company: '', email: '', phone: '', clientType: 'particular' as 'empresa' | 'particular' },
-        projectInfo: { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', country: '' },
-        scopeAndFeatures: { platforms: [] as string[], commonFeatures: [] as string[], otherFeatures: [] as string[] },
-        designAndUX: { hasBrandIdentity: 'no', brandFiles: [], designInspirations: ['', ''], lookAndFeel: '' },
-        contentAndStrategy: { contentCreation: '', marketingPlan: '', maintenance: '' },
+        contactInfo: initialData?.contactInfo || { name: '', company: '', email: '', phone: '', clientType: 'particular' as 'empresa' | 'particular' },
+        projectInfo: initialData?.projectInfo ? { ...initialData.projectInfo, mainGoals: paddedMainGoals } : { projectName: '', projectIdea: '', targetAudience: '', mainGoals: ['', '', ''], competitors: '', country: '' },
+        scopeAndFeatures: initialData?.scopeAndFeatures || { platforms: [] as string[], commonFeatures: [] as string[], otherFeatures: [] as string[] },
+        designAndUX: initialData?.designAndUX ? { ...initialData.designAndUX, designInspirations: paddedDesignInspirations } : { hasBrandIdentity: 'no', brandFiles: [], designInspirations: ['', ''], lookAndFeel: '' },
+        contentAndStrategy: initialData?.contentAndStrategy || { contentCreation: '', marketingPlan: '', maintenance: '' },
         attachments: [] as File[],
     });
     
@@ -245,9 +261,12 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
             const result = await submitLeadForm(leadId, formDataToSubmit);
             
             if (result.success) {
+                const isEdit = !!initialData;
                 toast({
-                    title: "Requerimientos Enviados",
-                    description: "Gracias por completar el formulario. Nos pondremos en contacto contigo pronto.",
+                    title: isEdit ? "Requerimientos Actualizados" : "Requerimientos Enviados",
+                    description: isEdit 
+                        ? "Tus requerimientos han sido actualizados exitosamente." 
+                        : "Gracias por completar el formulario. Nos pondremos en contacto contigo pronto.",
                 });
                 // Llamar a onSubmitSuccess de forma asíncrona para evitar recargas
                 setTimeout(() => {
@@ -531,12 +550,12 @@ export default function ProjectRequirementsForm({ leadId, projectType, onBack, o
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Enviando...
+                                        {initialData ? 'Actualizando...' : 'Enviando...'}
                                     </>
                                 ) : (
                                     <>
                                         <Send className="mr-2 h-4 w-4" />
-                                        Enviar Requerimientos
+                                        {initialData ? 'Actualizar Requerimientos' : 'Enviar Requerimientos'}
                                     </>
                                 )}
                             </Button>

@@ -22,6 +22,7 @@ import {
 import { Label } from '@/components/ui/label';
 import ProjectRequirementsForm from '@/components/leads/project-requirements-form';
 import Link from 'next/link';
+import type { ClientRequirements } from '@/lib/definitions';
 
 const PROJECT_TYPES = [
   {
@@ -51,25 +52,27 @@ const PROJECT_TYPES = [
   },
 ];
 
-export default function LeadFormClient({ leadId }: { leadId: string }) {
-  const [projectType, setProjectType] = useState('');
+export default function LeadFormClient({ leadId, existingRequirements }: { leadId: string, existingRequirements?: ClientRequirements }) {
+  const [projectType, setProjectType] = useState(existingRequirements ? 'web' : ''); // Si hay requerimientos, asumimos un tipo por defecto
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (isSubmitted) {
+    const isEdit = !!existingRequirements;
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="w-full max-w-3xl">
           <Card>
             <CardHeader className="items-center text-center">
-              <CardTitle>¡Gracias!</CardTitle>
+              <CardTitle>{isEdit ? '¡Actualizado!' : '¡Gracias!'}</CardTitle>
               <CardDescription>
-                Hemos recibido tus requerimientos.
+                {isEdit ? 'Tus requerimientos han sido actualizados.' : 'Hemos recibido tus requerimientos.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-4">
               <p className="text-muted-foreground">
-                Revisaremos la información que enviaste y nos pondremos en
-                contacto contigo muy pronto para discutir los siguientes pasos.
+                {isEdit 
+                  ? 'Los cambios se han guardado correctamente. Nos pondremos en contacto contigo si es necesario.'
+                  : 'Revisaremos la información que enviaste y nos pondremos en contacto contigo muy pronto para discutir los siguientes pasos.'}
               </p>
               <div className="pt-4">
                 <Link href={`/leads/${leadId}/view`}>
@@ -143,6 +146,7 @@ export default function LeadFormClient({ leadId }: { leadId: string }) {
       projectType={projectType}
       onBack={() => setProjectType('')}
       onSubmitSuccess={() => setIsSubmitted(true)}
+      initialData={existingRequirements}
     />
   );
 }

@@ -746,9 +746,12 @@ export async function submitLeadForm(leadId: string, formData: any) {
     lead.company = formData.contactInfo.company;
     lead.email = formData.contactInfo.email;
 
+    // Verificar si ya existe un requirement para este lead
+    const existingRequirement = await requirementsCollection.findOne({ leadId });
+    
     const requirementData: ClientRequirements = {
         leadId,
-        submittedAt: new Date(),
+        submittedAt: existingRequirement ? (existingRequirement.submittedAt || new Date()) : new Date(),
         ...formData,
     };
 
@@ -765,8 +768,24 @@ export async function submitLeadForm(leadId: string, formData: any) {
         );
     }
 
-    // Insertar requirement
-    await requirementsCollection.insertOne(requirementData);
+    // Actualizar o insertar requirement
+    if (existingRequirement) {
+        // Actualizar requirement existente
+        try {
+            await requirementsCollection.updateOne(
+                { _id: existingRequirement._id },
+                { $set: requirementData }
+            );
+        } catch {
+            await requirementsCollection.updateOne(
+                { leadId },
+                { $set: requirementData }
+            );
+        }
+    } else {
+        // Insertar nuevo requirement
+        await requirementsCollection.insertOne(requirementData);
+    }
 
     // Enviar emails de notificación (no bloquean si fallan)
     try {
@@ -783,9 +802,8 @@ export async function submitLeadForm(leadId: string, formData: any) {
         console.error('Error al enviar email de confirmación al cliente:', error);
     }
 
-    // No revalidar rutas aquí para evitar 404 en Vercel después del submit
-    // La revalidación se hará cuando se acceda al dashboard
-    // Revalidar rutas después de server actions puede causar navegación no deseada en Vercel
+    // Revalidar rutas del dashboard para actualizar la lista de leads
+    revalidatePath('/dashboard/leads');
     
     return { success: true };
 }
